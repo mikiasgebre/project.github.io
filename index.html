@@ -1,0 +1,258 @@
+<html>
+
+<head>
+    <title> Project </title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body onload="load()">
+    <div id="myform">
+        <table>
+            <tr>
+                <td>Name: Portfolio</td>
+                <td>
+                    <input type="text" id="porfolio">
+                </td>
+            </tr>
+            <tr>
+                <td>Name: like NOK</td>
+                <td>
+                    <input type="text" id="name">
+                </td>
+                <td>Quantity</td>
+                <td>
+                    <input type="text" id="quantity">
+                </td>
+                <input type="button" id="add" value="Add Stock" onclick="Javascript:addRow()">
+                </td>
+                </td>
+                <br></br>
+                <input type="button" id="add" value="Graph" onclick="Javascript:drawGraph()">
+                </td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+        </table>
+    </div>
+
+
+    <div id="mydata">
+        <label id="label"></label>
+        <table id="myTableData" border="1" cellpadding="5">
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                    <b>Name</b>
+                </td>
+                <td>
+                    <b>UnitValue</b>
+                </td>
+                <td>
+                    <b>Quantity</b>
+                </td>
+                <td>
+                    <b>Total Value</b>
+                </td>
+            </tr>
+        </table>
+        &nbsp;
+        <br/>
+    </div>
+    <div id="myDynamicTable">
+        <input type="button" id="create" value="Create a Portfolio" onclick="Javascript:addTable()">
+    </div>
+    <div id="myDiv">
+
+    </div>
+</body>
+<script>
+    var dateTime;
+    var row;
+    var xcordinate = [];
+    var ycordinate = [];
+    function addRow() {
+
+        var requestBaseUrl = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=";
+        var key = "&interval=1min&apikey=WVZXV5N5CJQ76F5T";
+        var myName = document.getElementById("name");
+        var requestUrl = requestBaseUrl + myName.value + key;
+        console.log(requestUrl);
+        var PortfolioName = document.getElementById("porfolio");
+        var quantity = document.getElementById("quantity");
+        var table = document.getElementById("myTableData");
+
+        var rowCount = table.rows.length;
+        row = table.insertRow(rowCount);
+        row.insertCell(0);
+
+        var label = document.getElementById("label");
+        label.innerHTML = PortfolioName.value;
+
+
+        row.insertCell(0).innerHTML = '<input type="button" value = "Delete" onClick="Javacsript:deleteRow(this)">';
+        row.insertCell(1).innerHTML = myName.value;
+
+
+
+        var today = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+        var east = new Date(today);
+        var date = east.getFullYear() + '-' + (east.getMonth() + 1) + '-' + east.getDate();
+        var minutes = east.getMinutes();
+        var hours = east.getHours();
+        var min;
+        var hour;
+        if (minutes < 10)
+            min = "0" + minutes;
+        else
+            min = minutes;
+
+        if (hours < 10)
+            hour = "0" + hours;
+        else
+            hour = hours;
+
+        var time = hour + ":" + min + ":" + "00";
+        dateTime = date + ' ' + time;
+
+        console.log(dateTime);
+
+        var request = new XMLHttpRequest();
+        request.open('GET', requestUrl);
+        request.responseType = 'json';
+        request.send();
+
+
+        request.onload = function () {
+
+            var superHeroes = request.response;
+            populateHeader(superHeroes);
+        }
+    }
+
+    function populateHeader(jsonObj) {
+
+        var col = [];
+        var places = jsonObj['Time Series (1min)'];
+        var values = places[dateTime];
+        console.log(values);
+        var bid = values['2. high'];
+        var num = Number(bid);
+        ycordinate.push(num);
+        console.log(bid);
+        row.insertCell(2).innerHTML = bid;
+        ycordinate.push(bid);
+        xcordinate.push(values);
+
+        row.insertCell(3).innerHTML = quantity.value;
+        row.insertCell(4).innerHTML = bid * quantity.value;
+
+
+    }
+
+    function drawGraph() {
+        var url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=NOK&interval=1min&apikey=WVZXV5N5CJQ76F5T";
+        var request = new XMLHttpRequest();
+        request.open('GET', url);
+        request.responseType = 'json';
+        request.send();
+
+
+        request.onload = function () {
+
+            var superHeroes = request.response;
+            draw(superHeroes);
+        }
+    }
+
+    function draw(jsonObj) {
+        
+        var today = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+        var east = new Date(today);
+        var date = east.getFullYear() + '-' + (east.getMonth() + 1) + '-' + east.getDate();
+        var minutes = east.getMinutes();
+        var hours = east.getHours();
+        var min;
+        var hour;
+        if (minutes < 10)
+            min = "0" + minutes;
+        else
+            min = minutes;
+
+        if (hours < 10)
+            hour = "0" + hours;
+        else
+            hour = hours;
+
+        var time = hour + ":" + min + ":" + "00";
+        var dateTimeNow = date + ' ' + time;
+
+        var places = jsonObj['Time Series (1min)'];
+        var open = jsonObj['1. open'];
+        var dates = Object.keys(places);
+        var values = places[dateTimeNow];
+       
+       
+        
+        var col = [];
+       
+        col.push(places);
+        var result=col.map(Number);
+      
+        var NOK = {
+            x: [1,2,3,4],
+            y: ycordinate,
+            type: 'scatter'
+        };
+        var MSFT = {
+            x: [1, 2, 3, 4],
+            y: [16, 5, 11, 9],
+            type: 'scatter'
+        };
+        var data = [NOK,MSFT];
+        Plotly.newPlot('myDiv', data);
+
+       
+
+
+    }
+
+    function deleteRow(obj) {
+
+        var index = obj.parentNode.parentNode.rowIndex;
+        var table = document.getElementById("myTableData");
+        table.deleteRow(index);
+    }
+
+    function addTable() {
+
+        var myTableDiv = document.getElementById("myDynamicTable");
+        var table = document.createElement("table");
+        table.border = "1";
+        var col = ["Name", "UnitValue", "Quantity", "Total Value"];
+
+
+        var tr = table.insertRow(-1);
+        for (var i = 0; i < col.length; i++) {
+            var th = document.createElement("th");
+            th.innerHTML = col[i];
+            tr.appendChild(th);
+        }
+
+        myTableDiv.appendChild(table);
+
+    }
+
+
+    function load() {
+
+        console.log("Page load finished");
+
+    }
+</script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js">
+
+</script>
+
+</html>
